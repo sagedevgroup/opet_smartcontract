@@ -1,6 +1,6 @@
 # Scripts instraction
 
-##Requirements
+## Requirements
 
 Use python3 (tested with python3.6).
 
@@ -41,7 +41,7 @@ Wait for contract deploy
 0xb80ecAc8BD237eEd01E2333abe522f3Db6E44F53
 ```
 
-##Run Airdrop
+## Run Airdrop
 
 To run airdrop script use command:
 ```commandline

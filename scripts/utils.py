@@ -1,8 +1,4 @@
 import time
-import csv
-
-ACCOUNT_INDENT = 4
-
 
 def wait_for_tx(tx_hash, web3, delay=5, wait_message=None):
     while True:

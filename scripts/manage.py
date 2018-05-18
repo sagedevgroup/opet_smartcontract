@@ -1,14 +1,12 @@
 import csv
 import argparse
-import time
-from datetime import datetime
 import getpass
 import math
 
 from web3 import Web3, HTTPProvider
 from solc import compile_files
 
-from utils import CSV_ROWS, get_csv_file_row, wait_for_tx
+from utils import wait_for_tx
 
 ADDRESSES_PER_TX = 125
 
@@ -67,7 +65,7 @@ def deploy_contract(compiled_source, account):
 ap = argparse.ArgumentParser()
 
 ap.add_argument('command', type=str, choices=['send_airdrop', 'deploy_token'], help='Command to do')
-ap.add_argument('--file', '-f', type=str, help='optional path to file')
+ap.add_argument('--file', '-f', type=str, help='optional path to file with airdrop addresses')
 ap.add_argument('--token', '-t', type=str, help='token address')
 
 if __name__ == '__main__':

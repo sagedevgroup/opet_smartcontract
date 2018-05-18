@@ -25,7 +25,7 @@ def get_token_instance(compiled_source, token_address):
 def send_airdrop(token_instance, account, drop_file_path):
     with open(drop_file_path, 'r') as csv_file:
         addresses, amounts = list(zip(*csv.reader(csv_file)))
-        addresses, amounts = list(addresses), list(amounts)
+        addresses, amounts = [w3.toChecksumAddress(addr) for addr in addresses], list(amounts)
         amounts = [int(am) for am in amounts]
 
     number_of_iterarions = math.ceil(len(addresses) / ADDRESSES_PER_TX)

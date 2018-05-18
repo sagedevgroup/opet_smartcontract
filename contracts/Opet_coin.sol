@@ -286,7 +286,7 @@ contract OpetToken is MintableToken {
 
   string public constant name = "Opet Coin Token";
   string public constant symbol = "OPET";
-  uint32 public constant decimals = 10;
+  uint32 public constant decimals = 8;
 
   bool public paused = true;
 

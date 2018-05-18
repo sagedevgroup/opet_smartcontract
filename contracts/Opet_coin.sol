@@ -288,7 +288,7 @@ contract OpetToken is MintableToken {
   string public constant symbol = "OPET";
   uint32 public constant decimals = 10;
 
-  bool public paused = true;
+  bool public transferPaused = true;
 
   uint256 public constant AIRDROP_SUPPLY = 586365 * (10 ** uint(decimals)) / 10;
   uint256 public airdrop_sent;
@@ -298,12 +298,12 @@ contract OpetToken is MintableToken {
   }
 
   modifier notPaused() {
-    require(!paused);
+    require(!transferPaused);
     _;
   }
 
   function unpauseTransfer() onlyOwner public {
-    paused = false;
+    transferPaused = false;
   }
 
   function transferFrom(address _from, address _to, uint256 _value) notPaused public returns (bool) {

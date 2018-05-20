@@ -2,6 +2,7 @@ import csv
 import argparse
 import getpass
 import math
+import time
 
 from web3 import Web3, HTTPProvider
 from solc import compile_files
@@ -41,25 +42,35 @@ def check_airdrop(drop_file_path):
 def send_airdrop(token_instance, account, drop_file_path):
     with open(drop_file_path, 'r') as csv_file:
         addresses, amounts = list(zip(*csv.reader(csv_file)))
-        addresses, amounts = [w3.toChecksumAddress(addr.encode(“ascii”,“ignore”).decode(“ascii”)) for addr in addresses], list(amounts)
+        addresses, amounts = [w3.toChecksumAddress(addr.encode("ascii","ignore").decode("ascii")) for addr in addresses], list(amounts)
         amounts = [int(am) for am in amounts]
     number_of_iterarions = math.ceil(len(addresses) / ADDRESSES_PER_TX)
     with open('succesfuly_sent.csv', 'w') as csvfile:
         spamwriter = csv.writer(csvfile)
         spamwriter.writerow(['Address'])
 
+        new_nonce = -1
+        prev_nonce = -1
         for i in range(number_of_iterarions):
             addresses_batch = addresses[i * ADDRESSES_PER_TX:(i + 1) * ADDRESSES_PER_TX]
             amounts_batch = amounts[i * ADDRESSES_PER_TX:(i + 1) * ADDRESSES_PER_TX]
+
+            new_nonce = w3.eth.getTransactionCount(account.address)
+            while new_nonce <= prev_nonce:
+                print("Nonce Error, please wait")
+                time.sleep(5)
+                new_nonce = w3.eth.getTransactionCount(account.address)
+
             transaction = token_instance.functions.sendAirdrops(
                 addresses_batch , amounts_batch
             ).buildTransaction({'from': account.address,
-                                'nonce': w3.eth.getTransactionCount(account.address),
+                                'nonce': new_nonce,
                                 'gasPrice': w3.eth.gasPrice})
             signed=account.signTransaction(transaction)
             tx_hash = w3.eth.sendRawTransaction(signed.rawTransaction)
-            wait_for_tx(tx_hash, w3, wait_message="Wait for airdrop send {}".format(i))
+            wait_for_tx(tx_hash, w3, wait_message="Wait for airdrop send {}".format(i), delay=7)
             spamwriter.writerow(addresses_batch)
+            prev_nonce = new_nonce
 
 def deploy_contract(compiled_source, account):
     token_interface = compiled_source['../contracts/Opet_coin.sol:OpetToken']

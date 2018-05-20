@@ -21,13 +21,28 @@ def get_token_instance(compiled_source, token_address):
     token_instance = token_contract(token_address)
     return token_instance
 
+def check_airdrop(drop_file_path):
+    errors = 0
+    with open(drop_file_path, 'r') as csv_file:
+        addresses, amounts = list(zip(*csv.reader(csv_file)))
+        for addr in addresses:
+            try:
+                a = w3.toChecksumAddress(addr.encode("ascii","ignore").decode("ascii"))
+            except ValueError as ve:
+                print('Invalid address: ' + str(ve))
+                errors += 1
+                pass
+            except Exception as ve:
+                print('Unhandled exception! ' + str(ve))
+                errors += 1
+                pass
+        print('Errors: ' + str(errors))
 
 def send_airdrop(token_instance, account, drop_file_path):
     with open(drop_file_path, 'r') as csv_file:
         addresses, amounts = list(zip(*csv.reader(csv_file)))
-        addresses, amounts = [w3.toChecksumAddress(addr) for addr in addresses], list(amounts)
+        addresses, amounts = [w3.toChecksumAddress(addr.encode(“ascii”,“ignore”).decode(“ascii”)) for addr in addresses], list(amounts)
         amounts = [int(am) for am in amounts]
-
     number_of_iterarions = math.ceil(len(addresses) / ADDRESSES_PER_TX)
     with open('succesfuly_sent.csv', 'w') as csvfile:
         spamwriter = csv.writer(csvfile)
@@ -64,7 +79,7 @@ def deploy_contract(compiled_source, account):
 
 ap = argparse.ArgumentParser()
 
-ap.add_argument('command', type=str, choices=['send_airdrop', 'deploy_token'], help='Command to do')
+ap.add_argument('command', type=str, choices=['send_airdrop', 'deploy_token', 'check_airdrop'], help='Command to do')
 ap.add_argument('--file', '-f', type=str, help='optional path to file with airdrop addresses')
 ap.add_argument('--token', '-t', type=str, help='token address')
 
@@ -86,3 +101,5 @@ if __name__ == '__main__':
         send_airdrop(token_instance, acct, file_path)
     elif command == 'deploy_token':
         deploy_contract(compiled_source, acct)
+    elif command == 'check_airdrop':
+        check_airdrop(file_path)

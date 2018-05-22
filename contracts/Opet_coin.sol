@@ -286,14 +286,11 @@ contract OpetToken is MintableToken {
 
   string public constant name = "Opet Coin Token";
   string public constant symbol = "OPET";
-  uint32 public constant decimals = 10;
+  uint32 public constant decimals = 8;
 
   bool public transferPaused = true;
 
-  uint256 public constant AIRDROP_SUPPLY = 586365 * (10 ** uint(decimals)) / 10;
-  uint256 public airdrop_sent;
-
-  function OpetToken() {
+  constructor() public {
     maxMintLimit = 100000000 * (10 ** uint(decimals));
   }
 
@@ -318,10 +315,6 @@ contract OpetToken is MintableToken {
     require(_addresses.length == _amounts.length);
     for(uint i = 0; i < _addresses.length; i++){
       mintInternal(_addresses[i], _amounts[i]);
-      airdrop_sent = airdrop_sent.add(_amounts[i]);
-      if (airdrop_sent > AIRDROP_SUPPLY) {
-        revert();
-      }
     }
   }
 

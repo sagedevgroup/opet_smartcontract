@@ -22,13 +22,14 @@ def get_token_instance(compiled_source, token_address):
     token_instance = token_contract(token_address)
     return token_instance
 
+
 def check_airdrop(drop_file_path):
     errors = 0
     with open(drop_file_path, 'r') as csv_file:
         addresses, amounts = list(zip(*csv.reader(csv_file)))
         for addr in addresses:
             try:
-                a = w3.toChecksumAddress(addr.encode("ascii","ignore").decode("ascii"))
+                a = w3.toChecksumAddress(addr.encode("ascii", "ignore").decode("ascii"))
             except ValueError as ve:
                 print('Invalid address: ' + str(ve))
                 errors += 1
@@ -39,13 +40,16 @@ def check_airdrop(drop_file_path):
                 pass
         print('Errors: ' + str(errors))
 
-def send_airdrop(token_instance, account, drop_file_path):
+
+def send_airdrop(token_instance, account, drop_file_path, success_file_path='succesfuly_sent.csv',
+                 wait_message='Wait for airdrop send {}'):
     with open(drop_file_path, 'r') as csv_file:
         addresses, amounts = list(zip(*csv.reader(csv_file)))
-        addresses, amounts = [w3.toChecksumAddress(addr.encode("ascii","ignore").decode("ascii")) for addr in addresses], list(amounts)
+        addresses, amounts = [w3.toChecksumAddress(addr.encode("ascii", "ignore").decode("ascii")) for addr in
+                              addresses], list(amounts)
         amounts = [int(am) for am in amounts]
     number_of_iterarions = math.ceil(len(addresses) / ADDRESSES_PER_TX)
-    with open('succesfuly_sent.csv', 'w') as csvfile:
+    with open(success_file_path, 'w') as csvfile:
         spamwriter = csv.writer(csvfile)
         spamwriter.writerow(['Address'])
 
@@ -62,15 +66,16 @@ def send_airdrop(token_instance, account, drop_file_path):
                 new_nonce = w3.eth.getTransactionCount(account.address)
 
             transaction = token_instance.functions.sendAirdrops(
-                addresses_batch , amounts_batch
+                addresses_batch, amounts_batch
             ).buildTransaction({'from': account.address,
                                 'nonce': new_nonce,
                                 'gasPrice': w3.eth.gasPrice})
-            signed=account.signTransaction(transaction)
+            signed = account.signTransaction(transaction)
             tx_hash = w3.eth.sendRawTransaction(signed.rawTransaction)
-            wait_for_tx(tx_hash, w3, wait_message="Wait for airdrop send {}".format(i), delay=7)
+            wait_for_tx(tx_hash, w3, wait_message=wait_message.format(i), delay=7)
             spamwriter.writerow(addresses_batch)
             prev_nonce = new_nonce
+
 
 def deploy_contract(compiled_source, account):
     token_interface = compiled_source['../contracts/Opet_coin.sol:OpetToken']
@@ -103,9 +108,7 @@ if __name__ == '__main__':
     private_key = getpass.getpass('Private key:')
     acct = w3.eth.account.privateKeyToAccount(private_key)
 
-
     compiled_source = compile_files(["../contracts/Opet_coin.sol"], optimize=True)
-
 
     if command == 'send_airdrop':
         token_instance = get_token_instance(compiled_source, token_address)
@@ -114,3 +117,6 @@ if __name__ == '__main__':
         deploy_contract(compiled_source, acct)
     elif command == 'check_airdrop':
         check_airdrop(file_path)
+    elif command == 'send_bounty':
+        token_instance = get_token_instance(compiled_source, token_address)
+        send_airdrop(token_instance, acct, file_path, 'success_bounty.csv', 'Wait for bounty {}')

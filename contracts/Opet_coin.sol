@@ -228,6 +228,11 @@ contract MintableToken is StandardToken, Ownable {
     _;
   }
 
+  /**
+   * @dev Private function that checks mint permission
+   * @param _minter The address that is checked for permission.
+   * @return A boolean that indicates if _minter has permission to mint.
+   */
   function checkMintPermission(address _minter) private returns (bool) {
     if (_minter == owner) {
       return true;

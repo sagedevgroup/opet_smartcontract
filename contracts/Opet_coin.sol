@@ -263,7 +263,12 @@ contract MintableToken is StandardToken, Ownable {
     return mintInternal(_to, _amount);
   }
 
-  //allows minting wiht other contract functions. For example: sendAirdrops
+  /**
+   * @dev Private function implements minting token functionality for other function like "mint" and sendAirdrop
+   * @param _to The address that will receive the minted tokens.
+   * @param _amount The amount of tokens to mint.
+   * @return A boolean that indicates if the operation was successful.
+   */
   function mintInternal(address _to, uint256 _amount) internal returns (bool) {
     if (maxMintLimit < totalSupply_.add(_amount)) {
       revert();

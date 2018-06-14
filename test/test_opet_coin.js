@@ -67,7 +67,7 @@ contract("Opet Token", async function (accounts) {
 
 });
 
-contract("Gather token transfer whitelist", async function (accounts) {
+contract("Opet Token transfer whitelist", async function (accounts) {
    it('test whitelisting', async function() {
        let transferFrom = accounts[1];
        let transferTo = accounts[2];

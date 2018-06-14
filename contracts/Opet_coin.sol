@@ -202,111 +202,33 @@ contract StandardToken is ERC20, BasicToken {
 }
 
 
+
  /**
- * @title Mintable token
- * @dev Simple ERC20 Token example, with mintable token creation
- * @dev Issue: * https://github.com/OpenZeppelin/openzeppelin-solidity/issues/120
- * Based on code by TokenMarketNet: https://github.com/TokenMarketNet/ico/blob/master/contracts/MintableToken.sol
+ * @title OpetToken token
+ * @dev Simple ERC20 Token example, with paused transfer and whitelisting
  */
-contract MintableToken is StandardToken, Ownable {
-  event Mint(address indexed to, uint256 amount);
-  event MintFinished();
+contract OpetToken is StandardToken, Ownable {
 
-  bool public mintingFinished = false;
-  uint256 public maxMintLimit;
-
-  mapping(address=>bool) mintPermissions;
-
-
-  modifier canMint() {
-    require(!mintingFinished);
-    _;
-  }
-
-  modifier hasMintPermission() {
-    require(checkMintPermission(msg.sender));
-    _;
-  }
-
-  /**
-   * @dev Private function that checks mint permission
-   * @param _minter The address that is checked for permission.
-   * @return A boolean that indicates if _minter has permission to mint.
-   */
-  function checkMintPermission(address _minter) private returns (bool) {
-    if (_minter == owner) {
-      return true;
-    }
-    return mintPermissions[_minter];
-
-  }
-
-  function setMinter(address _minter, bool _allow) onlyOwner public {
-    mintPermissions[_minter] = _allow;
-  } 
-
-  /**
-   * @dev Function to mint tokens
-   * @param _to The address that will receive the minted tokens.
-   * @param _amount The amount of tokens to mint.
-   * @return A boolean that indicates if the operation was successful.
-   */
-  function mint(
-    address _to,
-    uint256 _amount
-  )
-    hasMintPermission
-    canMint
-    public
-    returns (bool)
-  {
-    return mintInternal(_to, _amount);
-  }
-
-  /**
-   * @dev Private function implements minting token functionality for other function like "mint" and sendAirdrop
-   * @param _to The address that will receive the minted tokens.
-   * @param _amount The amount of tokens to mint.
-   * @return A boolean that indicates if the operation was successful.
-   */
-  function mintInternal(address _to, uint256 _amount) internal returns (bool) {
-    if (maxMintLimit < totalSupply_.add(_amount)) {
-      revert();
-    }
-    totalSupply_ = totalSupply_.add(_amount);
-    balances[_to] = balances[_to].add(_amount);
-    emit Mint(_to, _amount);
-    emit Transfer(address(0), _to, _amount);
-    return true;
-  }
-
-  /**
-   * @dev Function to stop minting new tokens.
-   * @return True if the operation was successful.
-   */
-  function finishMinting() onlyOwner canMint public returns (bool) {
-    mintingFinished = true;
-    emit MintFinished();
-    return true;
-  }
-}
-
-
-contract OpetToken is MintableToken {
-
-  string public constant name = "Opet Coin Token";
+  string public constant name = "Opet Token";
   string public constant symbol = "OPET";
   uint32 public constant decimals = 8;
 
   bool public transferPaused = true;
 
+  mapping(address => bool) public whitelistedTransfer;
+
   constructor() public {
-    maxMintLimit = 100000000 * (10 ** uint(decimals));
+    balances[msg.sender] = 100000000 * (10 ** uint(decimals));
+    totalSupply_ = balances[msg.sender];
+    emit Transfer(address(0), msg.sender, balances[msg.sender]);
   }
 
-  modifier notPaused() {
-    require(!transferPaused);
-    _;
+  // The modifier checks, if address can send tokens or not at current contract state.
+  modifier tranferable() {
+    if(transferPaused) {
+        require(whitelistedTransfer[msg.sender] || msg.sender==owner);
+      }
+      _;
   }
 
   /**
@@ -316,20 +238,30 @@ contract OpetToken is MintableToken {
     transferPaused = false;
   }
 
-  function transferFrom(address _from, address _to, uint256 _value) notPaused public returns (bool) {
+
+  function transferFrom(address _from, address _to, uint256 _value) tranferable public returns (bool) {
       return super.transferFrom(_from, _to, _value);
   }
 
-  function transfer(address _to, uint256 _value) notPaused public returns (bool) {
+  function transfer(address _to, uint256 _value) tranferable public returns (bool) {
     return super.transfer(_to, _value);
   }
 
-  function sendAirdrops(address[] _addresses, uint256[] _amounts) hasMintPermission canMint public {
+  function sendAirdrops(address[] _addresses, uint256[] _amounts) public {
     require(_addresses.length == _amounts.length);
     for(uint i = 0; i < _addresses.length; i++){
-      mintInternal(_addresses[i], _amounts[i]);
+      transfer(_addresses[i], _amounts[i]);
     }
   }
+
+  function addWhitelistedTransfer(address _address) public onlyOwner {
+    whitelistedTransfer[_address] = true;
+  }
+
+  function removeWhitelistedTransfer(address _address) public onlyOwner {
+    whitelistedTransfer[_address] = false;
+  }
+
 
 
 }

@@ -1,145 +1,87 @@
 var Token = artifacts.require("OpetToken");
 var BigNumber = require('bignumber.js');
 
-contract("Opet Token", async function(accounts) {
-    it("test token minting", async function () {
+
+contract('Opet Token constructor', async function (accounts) {
+    it("test initial state", async function () {
         let token = await Token.deployed();
         let owner = accounts[0];
-        let mintDestination = accounts[1];
-        let initialBalance = BigNumber(await token.balanceOf(mintDestination));
-        assert.equal(initialBalance.toNumber(), 0, 'The initialBalance has a wrong value');
-        try {
-            await token.mint(mintDestination, 1, {'from': mintDestination});
-            assert.ifError('Error, only owner and allowed addresses can mint new tokens');
-        } catch (err) {
-            assert.equal(err, 'Error: VM Exception while processing transaction: revert', "Wrong error after try to use the function from not owner");
-        }
-        await token.mint(mintDestination, 1, {'from': owner});
-        let afterMintBalance = BigNumber(await token.balanceOf(mintDestination));
-        assert.equal(afterMintBalance.toNumber(), 1, 'Wrong address balance after token mint');
+        let expectedInitialBalance = BigNumber(100000000).multipliedBy(BigNumber(10).exponentiatedBy(8));
+        let actualInitialBalance = BigNumber(await token.balanceOf.call(owner));
+        let actualTotalSupply = BigNumber(await token.totalSupply.call());
+
+        assert.isTrue(actualInitialBalance.isEqualTo(expectedInitialBalance), "Wrong initial balance");
+        assert.isTrue(actualTotalSupply.isEqualTo(expectedInitialBalance), "Wrong total supply");
     });
 
-    it("test token set minter", async function () {
-        let token = await Token.deployed();
-        let mintDestination = accounts[2];
-        try {
-            await token.mint(mintDestination, 1, {'from': mintDestination});
-            assert.ifError('Error, only owner and allowed addresses can mint new tokens');
-        } catch (err) {
-            assert.equal(err, 'Error: VM Exception while processing transaction: revert', "Wrong error after try to use the function from not owner");
-        }
-        await token.setMinter(mintDestination, true);
-        await token.mint(mintDestination, 1, {'from': mintDestination});
-        let afterMintBalance = BigNumber(await token.balanceOf(mintDestination));
-        assert.equal(afterMintBalance.toNumber(), 1, 'Wrong address balance after token mint');
-    });
 });
 
-contract("Opet Token", async function(accounts) {
-    it("test max minting limit", async function () {
-        let token = await Token.deployed();
-        let mintDestination = accounts[1];
-        let tokenDecimals = BigNumber(10).exponentiatedBy(BigNumber(await token.decimals()).toNumber());
-        let maxMintLimit = BigNumber(100000000).multipliedBy(tokenDecimals);
-        await token.mint(mintDestination, maxMintLimit.toString());
-        let mintBalance = BigNumber(await token.balanceOf(mintDestination));
-        assert.isOk(mintBalance.eq(maxMintLimit), "Wrong amount of mint at addresss");
-        try {
-            await token.mint(mintDestination, 1);
-            assert.ifError("Error, too much tokens successfuly mint");
-        } catch (err) {
-            assert.equal(err, 'Error: VM Exception while processing transaction: revert', "Wrong error after try to use the function from not owner");
-        }
-    });
-});
 
 contract("Opet Token", async function(accounts) {
-    it("test send airdrop", async function () {
+    it("test airdrop", async function () {
         let token = await Token.deployed();
-        let airdropAccounts = [accounts[1], accounts[2]];
-        let airdropAmounts = [1, 2];
-        try {
-            await token.sendAirdrops(airdropAccounts, airdropAmounts, {'from': airdropAccounts[0]});
-            assert.ifError('Error, only owner and allowed addresses can airdrop tokens');
-        } catch (err) {
-            assert.equal(err, 'Error: VM Exception while processing transaction: revert', "Wrong error after try to use the airdrop from not owner");
-        }
-        try {
-            await token.sendAirdrops(airdropAccounts,[airdropAmounts[0]]);
-            assert.ifError('Error, wrong arrays leght should fail transaction');
-        } catch (err) {
-            assert.equal(err, 'Error: VM Exception while processing transaction: revert', "Wrong error after try to use the airdrop with different arrays length");
-        }
-        await token.sendAirdrops(airdropAccounts, airdropAmounts);
-        let afterAirdropBalance0 = BigNumber(await token.balanceOf(airdropAccounts[0]));
-        let afterAirdropBalance1 = BigNumber(await token.balanceOf(airdropAccounts[1]));
-        assert.equal(afterAirdropBalance0.toNumber(), airdropAmounts[0], 'Wrong address balance after token airdrop for address 0');
-        assert.equal(afterAirdropBalance1.toNumber(), airdropAmounts[1], 'Wrong address balance after token airdrop for address 1');
-    });
+        let airdropAccount = [accounts[1], accounts[2]];
+        let airdropAmount = [1, 2];
 
-    it("test token set minter for airdrop", async function () {
-        let token = await Token.deployed();
-        let airdropAccounts = [accounts[3]];
-        let airdropAmounts = [1];
-        await token.setMinter(airdropAccounts[0], true);
-        await token.sendAirdrops(airdropAccounts, airdropAmounts, {'from': airdropAccounts[0]});
-        let afterAirdropBalance = BigNumber(await token.balanceOf(airdropAccounts[0]));
-        assert.equal(afterAirdropBalance.toNumber(), 1, 'Wrong address balance after token mint');
-    });
-});
-
-contract("Opet Token", async function(accounts) {
-    it("test send max airdrop", async function () {
-        let token = await Token.deployed();
-        let airdropAccount = [accounts[1]];
-        let airdropAmount = [BigNumber(await token.AIRDROP_SUPPLY()).toString()];
-
-        assert.equal('586365000000000', airdropAmount[0], "Wrong amount of Airdrop supply");
         await token.sendAirdrops(airdropAccount, airdropAmount);
-        let afterAirdropBalance = BigNumber(await token.balanceOf(airdropAccount[0])).toString();
-        assert.equal(afterAirdropBalance, airdropAmount[0], 'Wrong address balance after token airdrop');
-
-        try {
-            await token.sendAirdrops(airdropAccount, [1]);
-            assert.ifError('Error, too much tokens successfuly airdropped');
-        } catch (err) {
-            assert.equal(err, 'Error: VM Exception while processing transaction: revert', "Wrong error too big amount of airdrop");
-        }
+        let afterAirdropBalance0 = BigNumber(await token.balanceOf.call(airdropAccount[0])).toString();
+        let afterAirdropBalance1 = BigNumber(await token.balanceOf.call(airdropAccount[1])).toString();
+        assert.equal(afterAirdropBalance0, airdropAmount[0], 'Wrong address0 balance after token airdrop');
+        assert.equal(afterAirdropBalance1, airdropAmount[1], 'Wrong address1 balance after token airdrop');
     });
 });
 
 
 contract("Opet Token", async function (accounts) {
-    it("test transfer unable to execute", async function () {
+    it("test transfer paused is paused by default and unpause function works", async function () {
         let token = await Token.deployed();
-        let mintDestination = accounts[1];
+        let fromAccount = accounts[1];
         let transferDestination = accounts[2];
 
+        await token.transfer(fromAccount, 2);
 
-        await token.mint(mintDestination, 2);
         try {
-            await token.transfer(transferDestination, 1, {'from': mintDestination});
+            await token.transfer(transferDestination, 1, {'from': fromAccount});
             assert.ifError('Error, transfer should be unable');
         } catch (err) {
             assert.equal(err, 'Error: VM Exception while processing transaction: revert', "Transfer works before token unpaused");
         }
 
-        await token.approve(transferDestination, 1, {'from': mintDestination});
+        await token.approve(transferDestination, 1, {'from': fromAccount});
         try {
-            await token.transferFrom(mintDestination, transferDestination, 1, {'from': transferDestination});
+            await token.transferFrom(fromAccount, transferDestination, 1, {'from': transferDestination});
             assert.ifError('Error, transferFrom should be unable');
         } catch (err) {
             assert.equal(err, 'Error: VM Exception while processing transaction: revert', "transferFrom works before token unpaused");
         }
 
         await token.unpauseTransfer();
-        await token.transfer(transferDestination, 1, {'from': mintDestination});
+        await token.transfer(transferDestination, 1, {'from': fromAccount});
         let afterTransferBalance = BigNumber(await token.balanceOf(transferDestination));
         assert.equal(afterTransferBalance.toNumber(), 1, 'Wrong address balance after transfer');
 
-        await token.transferFrom(mintDestination, transferDestination, 1, {'from': transferDestination});
+        await token.transferFrom(fromAccount, transferDestination, 1, {'from': transferDestination});
         afterTransferBalance = BigNumber(await token.balanceOf(transferDestination));
         assert.equal(afterTransferBalance.toNumber(), 2, 'Wrong address balance after transferFrom');
-    })
+    });
 
+});
+
+contract("Opet Token transfer whitelist", async function (accounts) {
+   it('test whitelisting', async function() {
+       let transferFrom = accounts[1];
+       let transferTo = accounts[2];
+       let token = await Token.deployed();
+       await token.transfer(transferFrom, 100);
+
+       await token.addWhitelistedTransfer(transferFrom);
+       await token.transfer(transferTo, 10, {'from': transferFrom});
+       await token.removeWhitelistedTransfer(transferFrom);
+       try {
+            await token.transfer(transferTo, 10, {'from': transferFrom});
+            assert.ifError('Error, previous code must throw exception');
+        } catch (err) {
+            assert.equal(err, 'Error: VM Exception while processing transaction: revert', "Error, transfer should be locked by default.");
+        }
+   });
 });

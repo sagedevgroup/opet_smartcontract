@@ -44,19 +44,10 @@ Wait for contract deploy
 0xb80ecAc8BD237eEd01E2333abe522f3Db6E44F53
 ```
 
-## Run Airdrop
+## Add address to transfer whitelist
 
-To run airdrop script use command:
-```
-python3 manage.py -f /path_to_csv_file/ -t /token_address/ send_airdrop
-```
-
-CSV file should have the following format:
+To add address to token's transfer whitelist run a command:
 
 ```
-/address/,/amount of ether/
-...
-0x6635F83421Bf059cd8111f180f0727128685BaE4, 1
+python3 manage.py -t /token_address/ -a /address should be added/ send_airdrop
 ```
-
-Amount of ether - should be number of sent tokens in Wei.

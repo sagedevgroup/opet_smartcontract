@@ -49,5 +49,5 @@ Wait for contract deploy
 To add address to token's transfer whitelist run a command:
 
 ```
-python3 manage.py -t /token_address/ -a /address should be added/ send_airdrop
+python3 manage.py -t /token_address/ -a /address should be added/ whitelist_address
 ```

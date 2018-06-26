@@ -9,7 +9,7 @@ Install necessary packages with
 pip3 install -r requirements.txt
 ```
 
-Also, there is solc compiler reqired. Install it with:
+Also, the solc compiler is required. Install it with:
 
 ```commandline
 sudo add-apt-repository ppa:ethereum/ethereum
@@ -24,9 +24,9 @@ To deploy contract run scrip
 ```commandline
 python3 manage.py deploy_token
 ```
-It will request private key for tx sign with silent command promt.
+It will request the private key for tx sign with a silent command promt.
 
-Then wait till script will be deployed. After that script shows address of created contract.
+Then wait until script will be deployed. After that - the script shows an address of created contract.
 
 Example:
 ```

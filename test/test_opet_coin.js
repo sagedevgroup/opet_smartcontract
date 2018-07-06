@@ -44,7 +44,7 @@ contract("Opet Token", async function (accounts) {
             await token.transfer(transferDestination, 1, {'from': fromAccount});
             assert.ifError('Error, transfer should be unable');
         } catch (err) {
-            assert.equal(err, 'Error: VM Exception while processing transaction: revert', "Transfer works before token unpaused");
+            assert.equal(err, 'Error: VM Exception while processing transaction: revert', "Transfer works before token transfer unpaused");
         }
 
         await token.approve(transferDestination, 1, {'from': fromAccount});

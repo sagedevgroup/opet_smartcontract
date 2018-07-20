@@ -87,7 +87,7 @@ contract('Opet - BaseToken - transfer cases ', async(accounts)=>{
             await this.token.transfer(accounts[1], maxUint256)
             assert.isOk(false, 'case should be fail')
         } catch(err){
-            console.log(err.message)
+            //console.log(err.message)
             assert.isAbove(err.message.search('revert'), -1 , 'transfer should be fail with morethan max unit256')
         }
     });

@@ -335,7 +335,7 @@ contract("Opet - MintableToken - mint unit cases", async (accounts)=> {
             //console.log('balance:' + balance.toString())
             assert.isOk(false, 'case should be fail')
         } catch(err){
-            console.log(err.message)
+            //console.log(err.message)
             assert.isAbove(err.message.search('revert'), -1 , 'send max unit256 shoud be fail')
         }
     })

@@ -1,6 +1,7 @@
 {
   "dependencies": {
-    "bignumber.js": "^6.0.0"
+    "bignumber.js": "^6.0.0",
+    "ethers": "^3.0.25"
   },
   "name": "truffle-test",
   "description": "Opet ICO smart-contracts project",

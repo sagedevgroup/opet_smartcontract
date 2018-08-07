@@ -47,13 +47,26 @@ contract('Opet - OpetToken - custom', async(accounts)=>{
         let token = await OpetToken.new()
         this.token = token
     })
-    it('[Func Test] paused transfer', async()=>{
+    it('[Func Test] paused transfer <conditions: - owner>', async()=>{
+        let result = await this.token.transfer(accounts[1], 100)
+        assert.isOk(result, 'should be ok')
+    })
+    it('[Func Test] paused transfer <conditions: - people in whitelist>', async()=>{
+        await this.token.addWhitelistedTransfer(accounts[1])
+        let result = await this.token.transfer(accounts[1], 100)
+        assert.isOk(result, 'should be ok')
+        result = await this.token.transfer(accounts[2], 100, {from:accounts[1]})
+        assert.isOk(result, 'should be ok')
+        let balance = await this.token.balanceOf(accounts[2])
+        assert.equal('100', balance.toString(), 'account balace not equal')
+    })
+    it('[Func Test] paused transfer <conditions - not owner, not in whitelist', async()=>{
+        let result = await this.token.transfer(accounts[1], 100)
+        assert.isOk(result, 'should be ok')
         try{
-            await this.token.transfer(accounts[1], 100)
-            assert.isOk(false, 'should be fail')
-        } catch(err){
-            //console.log(err.message)
-            assert.isAbove(err.message.search('revert'), -1, 'paused transfer should be fail')
+            await this.token.transfer(accounts[2], 1, {from: accounts[1]})
+        }catch(err) {
+            assert.isAbove(err.message.search('revert'), -1, 'pased transferFrom should be fail')
         }
     })
     it('[Func Test] paused transfer from', async()=>{
@@ -78,10 +91,80 @@ contract('Opet - OpetToken - custom', async(accounts)=>{
     })
 })
 
+contract('Opet - OpetToken - addWhitelistedTransfer', async(accounts)=>{
+    beforeEach(async()=>{
+        let token = await OpetToken.new()
+        this.token = token
+    })
+    it('[Func Test] addWhitelistedTransfer <conditions - owner>', async()=>{
+        let result = this.token.transfer(accounts[1], 100)
+        try{
+            result = await this.token.transfer(accounts[2], 100, {from:accounts[1]})
+            assert.isOk(result == false, 'should be fail')
+        } catch(err){
+            assert.isAbove(err.message.search('revert'), -1, 'without permssion should be fail')
+        }
+        await this.token.addWhitelistedTransfer(accounts[1])
+        result = this.token.transfer(accounts[2], 10, {from:accounts[1]})
+        assert.isOk(result, 'should be ok')
+    })
+    it('[Func Test] addWhitelistedTransfer <conditions - not owner>', async()=>{
+        try {
+            await this.token.addWhitelistedTransfer(accounts[1], {from:accounts[2]})
+            assert.isOk(false, 'should be fail')
+        } catch(err){
+            assert.isAbove(err.message.search('revert'), -1, 'without permssion should be fail')
+        }
+    })
+})
+
+contract('Opet - OpetToken - removeWhitelistedTransfer', async(accounts)=>{
+    beforeEach(async()=>{
+        let token = await OpetToken.new()
+        this.token = token
+    })
+    it('[Func Test] removeWhitelistedTransfer <conditions - owner>', async()=>{
+        let result = this.token.transfer(accounts[1], 100)
+        assert.isOk(result, 'should be ok')
+        this.token.addWhitelistedTransfer(accounts[1])
+        result = this.token.transfer(accounts[2], 10, {from:accounts[1]})
+        assert.isOk(result, 'should be ok')
+        await this.token.removeWhitelistedTransfer(accounts[1])
+        try{
+            result = await this.token.transfer(accounts[2], 10, {from:accounts[1]})
+            assert.isOk(result == false, 'should be fail')
+        } catch(err){
+            assert.isAbove(err.message.search('revert'), -1, 'without permssion should be fail')
+        }
+        assert.isOk(result, 'should be ok')
+    })
+    it('[Func Test] removeWhitelistedTransfer <conditions - not owner>', async()=>{
+        try {
+            await this.token.removeWhitelistedTransfer(accounts[1], {from:accounts[2]})
+            assert.isOk(false, 'should be fail')
+        } catch(err){
+            assert.isAbove(err.message.search('revert'), -1, 'without permssion should be fail')
+        }
+    })
+})
+
+contract('Opet - OpetToken - sendAirdrops', async(accounts)=>{
+    it('[Func Test] sendAirdrops <conditions - not transferable', async()=>{
+        let token = await OpetToken.new()
+        try {
+            let addresses = getRandomEthAddress(10)
+            let amounts = getAmounts(10, 1)
+            await token.sendAirdrops(addresses, amounts, {from:accounts[1]})
+        } catch(err){
+            assert.isAbove(err.message.search('revert'), -1, 'without permssion should be fail')
+        }
+    })
+})
 contract('Opet - OpetToken - sendAirdrops', async(accounts)=>{
     beforeEach(async()=>{
         let token = await OpetToken.new()
         this.token = token
+        await this.token.unpauseTransfer()
     })
     it('[Func Test] sendAirdrops <conditions - normal>', async()=>{
         let addresses = getRandomEthAddress(10)
@@ -95,8 +178,7 @@ contract('Opet - OpetToken - sendAirdrops', async(accounts)=>{
         }
     })
     it('[Func Test] sendAirdrops <conditions - not owner with permssion>', async()=>{
-        let result = this.token.setMinter(accounts[1], true)
-        assert.isOk(result, 'should be ok')
+        let result = this.token.transfer(accounts[1], 10000)
         let addresses = getRandomEthAddress(10)
         let amounts = getAmounts(10, 1)
         await this.token.sendAirdrops(addresses, amounts,{from:accounts[1]})
@@ -107,24 +189,11 @@ contract('Opet - OpetToken - sendAirdrops', async(accounts)=>{
             assert.equal(balance.toString(), '1', 'balance is not set to right value')
         }
     })
-    it('[Func Test] sendAirdrops <conditions - without mint permssion>', async()=>{
+    it('[Func Test] sendAirdrops <conditions - without  amount>', async()=>{
         let addresses = getRandomEthAddress(10)
         let amounts = getAmounts(10, 1)
         try{
             await this.token.sendAirdrops(addresses, amounts,{from:accounts[1]})
-            assert.isOk(false, 'should be fail')
-        } catch(err){
-            //console.log(err.message)
-            assert.isAbove(err.message.search('revert'), -1, 'without mint permssion should be fail')
-        }
-    })
-    it('[Func Test] sendAirdrops <conditions - cannot mint>', async()=>{
-        let result = this.token.finishMinting()
-        assert.isOk(result, 'should be ok')
-        let addresses = getRandomEthAddress(10)
-        let amounts = getAmounts(10, 1)
-        try{
-            await this.token.sendAirdrops(addresses, amounts)
             assert.isOk(false, 'should be fail')
         } catch(err){
             //console.log(err.message)
@@ -142,13 +211,13 @@ contract('Opet - OpetToken - sendAirdrops', async(accounts)=>{
             assert.isAbove(err.message.search('revert'), -1, 'without mint permssion should be fail')
         }
     })
-    it('[Func Test] sendAirdrops <conditions - out of max mint limit>', async()=>{
-        let result = this.token.mint(accounts[0], 100000000 * (10 ** 8))
+    it('[Func Test] sendAirdrops <conditions - out of max amount>', async()=>{
+        let result = this.token.transfer(accounts[1], 1)
         assert.isOk(result, 'should be ok')
         let addresses = getRandomEthAddress(10)
         let amounts = getAmounts(10, 1)
         try{
-            await this.token.sendAirdrops(addresses, amounts)
+            await this.token.sendAirdrops(addresses, amounts, {from:accounts[1]})
             assert.isOk(false, 'should be fail')
         } catch(err){
             //console.log(err.message)
